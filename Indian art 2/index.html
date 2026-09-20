@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Interactive Indian Art Map – Explore India's rich artistic traditions, cave murals, tribal heritage, and temple sculptures through an interactive geographic visualization.">
+  <title>Interactive Indian Art Map</title>
+
+  <!-- Google Fonts: Marcellus (Heritage Classical) & Plus Jakarta Sans (Modern UI) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" 
+        crossorigin="">
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Top App Navigation / Header -->
+  <header class="app-header" role="banner">
+    <div class="header-branding">
+      <div class="header-icon-wrapper" aria-hidden="true">
+        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M12 3a9 9 0 0 0 0 18M12 3c3.5 0 6 4 6 9s-2.5 9-6 9M12 3c-3.5 0-6 4-6 9s2.5 9 6 9"></path>
+          <circle cx="12" cy="12" r="2" fill="currentColor"></circle>
+        </svg>
+      </div>
+      <div class="header-titles">
+        <div class="title-row">
+          <h1 class="project-title">Interactive Indian Art Map</h1>
+        </div>
+        <p class="project-subtitle">Explore India’s diverse artistic traditions through geography</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button id="reset-view-btn" class="btn btn-secondary" title="Reset map to show all of India" aria-label="Reset map view to entire India">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+          <path d="M3 3v5h5"></path>
+        </svg>
+        <span>Reset View</span>
+      </button>
+      <button id="toggle-sidebar-btn" class="btn btn-primary mobile-only-btn" aria-label="Toggle location directory list">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+        <span id="toggle-sidebar-text">Locations (8)</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Split Layout Container -->
+  <main class="app-main" id="main-content">
+    
+    <!-- Sidebar: Directory & Filtering -->
+    <aside class="sidebar" id="sidebar" aria-label="Indian Art Traditions Directory">
+      <div class="sidebar-header">
+        <div class="sidebar-headline">
+          <h2>Art Traditions</h2>
+          <span class="location-count-badge" id="location-count">8 Locations</span>
+        </div>
+        <p class="sidebar-hint">Select a heritage tradition below to explore its geography and history.</p>
+
+        <!-- Search Input -->
+        <div class="search-box">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="art-search-input" placeholder="Search art form, location, state..." aria-label="Search art form, location, or state">
+          <button id="clear-search-btn" class="clear-search-btn hidden" aria-label="Clear search">×</button>
+        </div>
+
+        <!-- Category Filter Pills -->
+        <div class="filter-pills" role="group" aria-label="Filter by art category">
+          <button class="filter-pill active" data-category="all">All (8)</button>
+          <button class="filter-pill" data-category="Cave & Rock-Cut">Cave Art</button>
+          <button class="filter-pill" data-category="Folk & Tribal">Folk & Tribal</button>
+          <button class="filter-pill" data-category="Classical Painting">Classical</button>
+          <button class="filter-pill" data-category="Temple Sculpture">Sculpture</button>
+        </div>
+      </div>
+
+      <!-- Scrollable Location Cards List -->
+      <div class="locations-list" id="locations-list" role="list" aria-label="Locations list">
+        <!-- Dynamically generated via JavaScript -->
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="academic-note">
+          <strong>Cultural Heritage:</strong> Curated visualization of 8 foundational Indian art traditions with verified geographic coordinates.
+        </div>
+      </div>
+    </aside>
+
+    <!-- Map Container Area -->
+    <section class="map-section" aria-label="Interactive Map of India">
+      <div id="map" role="region" aria-label="Interactive Leaflet Map"></div>
+    </section>
+
+  </main>
+
+  <!-- Detailed Slide-in / Modal Exploration Card -->
+  <div class="modal-backdrop hidden" id="modal-backdrop" aria-hidden="true">
+    <div class="detail-modal" id="detail-modal" role="dialog" aria-modal="true" aria-labelledby="modal-art-title">
+      
+      <!-- Modal Header Banner -->
+      <div class="modal-header-banner">
+        <div class="modal-tags">
+          <span class="modal-category-tag" id="modal-category">Category</span>
+          <span class="modal-state-tag" id="modal-state">State</span>
+        </div>
+        <button class="modal-close-btn" id="modal-close-btn" aria-label="Close information card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Modal Content Body -->
+      <div class="modal-scroll-body">
+        <div class="modal-headline">
+          <h2 id="modal-art-title" class="modal-title">Art Form Name</h2>
+          <p id="modal-location-subtitle" class="modal-location">Location, State</p>
+        </div>
+
+        <!-- Museum Hero Image & Historical Artifact Documentation -->
+        <div class="modal-hero-wrapper" id="modal-hero-container">
+          <div class="modal-img-frame">
+            <img id="modal-hero-img" class="modal-hero-img" src="" alt="Historical Indian Artwork" loading="lazy">
+            <div class="modal-img-overlay"></div>
+          </div>
+          <div class="modal-img-meta">
+            <span class="modal-img-badge">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21 15 16 10 5 21"></polyline>
+              </svg>
+              <span>Archival Heritage Documentation</span>
+            </span>
+            <span id="modal-img-attribution" class="modal-img-attribution">Wikimedia Commons (Free Cultural License)</span>
+          </div>
+        </div>
+
+        <div class="modal-quick-stats">
+          <div class="stat-card">
+            <span class="stat-label">Historical Period</span>
+            <strong class="stat-val" id="modal-period">—</strong>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Key Medium / Technique</span>
+            <strong class="stat-val" id="modal-medium">—</strong>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Geographic Coordinates</span>
+            <strong class="stat-val" id="modal-coords">—</strong>
+          </div>
+        </div>
+
+        <!-- Section: Overview -->
+        <div class="modal-section">
+          <h3 class="section-title">Overview & Cultural Context</h3>
+          <p id="modal-description" class="modal-text"></p>
+        </div>
+
+        <!-- Section: Distinctive Characteristics -->
+        <div class="modal-section">
+          <h3 class="section-title">Distinctive Artistic Characteristics</h3>
+          <ul id="modal-features-list" class="features-list"></ul>
+        </div>
+
+        <!-- Section: Materials and Techniques -->
+        <div class="modal-section">
+          <h3 class="section-title">Techniques, Pigments & Motifs</h3>
+          <p id="modal-techniques" class="modal-text"></p>
+        </div>
+
+        <!-- Section: Cultural Significance -->
+        <div class="modal-highlight-box">
+          <div class="highlight-icon">✦</div>
+          <div>
+            <h4 class="highlight-title">Historical & Cultural Significance</h4>
+            <p id="modal-significance" class="highlight-text"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="modal-footer">
+        <div class="modal-nav-btns">
+          <button id="modal-prev-btn" class="btn btn-outline" aria-label="Previous art form">← Previous</button>
+          <button id="modal-next-btn" class="btn btn-outline" aria-label="Next art form">Next →</button>
+        </div>
+        <button id="modal-flyto-btn" class="btn btn-primary" aria-label="Center on map">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+            <circle cx="12" cy="10" r="3"></circle>
+          </svg>
+          <span>View on Map</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" 
+          crossorigin=""></script>
+
+  <!-- Application Logic -->
+  <script src="script.js"></script>
+</body>
+</html>
